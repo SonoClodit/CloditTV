@@ -1,1 +1,46 @@
-
+{
+  "repository": "CloditTV",
+  "version": 1,
+  "extensions": [
+    {
+      "id": "org.clodit.tmdb",
+      "name": "TMDB",
+      "description": "Catalogo, ricerca, locandine e informazioni in italiano.",
+      "language": "IT",
+      "version": "1.0.0",
+      "icon": "movies",
+      "capabilities": ["Catalogo", "Ricerca", "Dettagli"],
+      "system": true
+    },
+    {
+      "id": "org.clodit.archive",
+      "name": "Internet Archive",
+      "description": "Film e video di pubblico dominio riproducibili legalmente.",
+      "language": "MULTI",
+      "version": "1.0.0",
+      "icon": "archive",
+      "capabilities": ["Catalogo", "Ricerca", "Riproduzione"],
+      "system": false
+    },
+    {
+      "id": "org.clodit.library",
+      "name": "Libreria personale",
+      "description": "Organizza e riproduce i file video posseduti dall’utente.",
+      "language": "LOCALE",
+      "version": "1.0.0",
+      "icon": "library",
+      "capabilities": ["File locali", "Riproduzione"],
+      "system": false
+    },
+    {
+      "id": "org.clodit.demo.it",
+      "name": "Demo italiano",
+      "description": "Provider didattico per provare catalogo e sorgenti demo.",
+      "language": "IT",
+      "version": "1.0.0",
+      "icon": "science",
+      "capabilities": ["Catalogo", "Sorgenti demo"],
+      "system": false
+    }
+  ]
+}
