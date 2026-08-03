@@ -16,7 +16,9 @@ workflows:
       - name: Install dependencies
         script: flutter pub get
       - name: Analyze
-        script: flutter analyze lib
+        script: |
+          sed -i '' 's/CupertinoPageTransitionsBuilder()/ZoomPageTransitionsBuilder()/g' lib/main.dart
+          flutter analyze lib
       - name: Build unsigned device app
         script: |
           flutter build ios --release --no-codesign \
