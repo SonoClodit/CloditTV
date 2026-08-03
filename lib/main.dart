@@ -5,31 +5,203 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-void main() => runApp(const CloditTvApp());
+final themeController = ThemeController();
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await themeController.load();
+  runApp(const CloditTvApp());
+}
+
+enum CloditTheme { neon, violet, christmas, spring, summer }
+
+class ThemeProfile {
+  const ThemeProfile({
+    required this.name,
+    required this.accent,
+    required this.secondary,
+  });
+
+  final String name;
+  final Color accent;
+  final Color secondary;
+}
+
+const themeProfiles = <CloditTheme, ThemeProfile>{
+  CloditTheme.neon: ThemeProfile(
+    name: 'Neon',
+    accent: Color(0xFF31E981),
+    secondary: Color(0xFF00B86B),
+  ),
+  CloditTheme.violet: ThemeProfile(
+    name: 'Violet',
+    accent: Color(0xFFB36CFF),
+    secondary: Color(0xFF6C4DFF),
+  ),
+  CloditTheme.christmas: ThemeProfile(
+    name: 'Natale',
+    accent: Color(0xFFFF405C),
+    secondary: Color(0xFF16C784),
+  ),
+  CloditTheme.spring: ThemeProfile(
+    name: 'Primavera',
+    accent: Color(0xFFFF6FB5),
+    secondary: Color(0xFF7FE8A7),
+  ),
+  CloditTheme.summer: ThemeProfile(
+    name: 'Estate',
+    accent: Color(0xFFFFB627),
+    secondary: Color(0xFF00C8FF),
+  ),
+};
+
+class ThemeController extends ChangeNotifier {
+  CloditTheme selected = CloditTheme.neon;
+
+  ThemeProfile get profile => themeProfiles[selected]!;
+
+  Future<void> load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getString('clodit_theme');
+    selected = CloditTheme.values.firstWhere(
+      (theme) => theme.name == value,
+      orElse: () => CloditTheme.neon,
+    );
+  }
+
+  Future<void> select(CloditTheme theme) async {
+    selected = theme;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('clodit_theme', theme.name);
+  }
+}
 
 class CloditTvApp extends StatelessWidget {
   const CloditTvApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const green = Color(0xFF31E981);
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'CloditTV',
-      themeMode: ThemeMode.dark,
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: green,
-          brightness: Brightness.dark,
-          surface: const Color(0xFF111418),
-        ),
-        scaffoldBackgroundColor: const Color(0xFF090B0E),
-        useMaterial3: true,
-      ),
-      home: const HomeScreen(),
+    return AnimatedBuilder(
+      animation: themeController,
+      builder: (context, _) {
+        final profile = themeController.profile;
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'CloditTV',
+          themeMode: ThemeMode.dark,
+          darkTheme: ThemeData(
+            brightness: Brightness.dark,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: profile.accent,
+              primary: profile.accent,
+              secondary: profile.secondary,
+              brightness: Brightness.dark,
+              surface: const Color(0xFF111418),
+            ),
+            scaffoldBackgroundColor: const Color(0xFF07090C),
+            cardTheme: const CardThemeData(
+              color: Color(0xFF11151B),
+              elevation: 0,
+            ),
+            pageTransitionsTheme: const PageTransitionsTheme(
+              builders: {
+                TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+                TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+              },
+            ),
+            useMaterial3: true,
+          ),
+          home: const HomeScreen(),
+        );
+      },
     );
   }
+}
+
+class CloditLogo extends StatelessWidget {
+  const CloditLogo({this.compact = false, super.key});
+
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = Theme.of(context).colorScheme.primary;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        CustomPaint(
+          size: Size(compact ? 34 : 42, compact ? 30 : 36),
+          painter: _CloditMarkPainter(accent),
+        ),
+        if (!compact) ...[
+          const SizedBox(width: 8),
+          const Text(
+            'Clodit',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -1.2,
+            ),
+          ),
+          Text(
+            'TV',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -1.2,
+              color: accent,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _CloditMarkPainter extends CustomPainter {
+  const _CloditMarkPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final glow = Paint()
+      ..color = color.withValues(alpha: .28)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 9
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7);
+    final line = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = 3.2;
+    final rect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(size.width * .16, size.height * .16, size.width * .72,
+          size.height * .68),
+      Radius.circular(size.height * .16),
+    );
+    canvas.drawRRect(rect, glow);
+    canvas.drawArc(
+      Rect.fromLTWH(0, 0, size.height, size.height),
+      .65,
+      5.0,
+      false,
+      line,
+    );
+    canvas.drawRRect(rect, line);
+    final play = Path()
+      ..moveTo(size.width * .48, size.height * .37)
+      ..lineTo(size.width * .68, size.height * .5)
+      ..lineTo(size.width * .48, size.height * .63)
+      ..close();
+    canvas.drawPath(play, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(covariant _CloditMarkPainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 class Movie {
@@ -214,22 +386,37 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'CloditTV',
-          style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: -1),
-        ),
+        title: const CloditLogo(),
+        backgroundColor: Colors.transparent,
         actions: [
           if (apiKey.isEmpty)
             const Padding(
-              padding: EdgeInsets.only(right: 16),
+              padding: EdgeInsets.only(right: 4),
               child: Chip(label: Text('DEMO')),
             ),
+          IconButton(
+            tooltip: 'Cambia tema',
+            onPressed: () => showModalBottomSheet<void>(
+              context: context,
+              showDragHandle: true,
+              backgroundColor: const Color(0xFF11151B),
+              builder: (_) => const ThemePicker(),
+            ),
+            icon: const Icon(Icons.palette_outlined),
+          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: () => _refresh(searchController.text),
         child: CustomScrollView(
           slivers: [
+            SliverToBoxAdapter(
+              child: HeroBanner(
+                movie: movies.isEmpty ? null : movies.first,
+                loading: loading,
+              ),
+            ),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 22),
@@ -320,12 +507,20 @@ class MovieCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
-        builder: (_) => DetailsScreen(movie: movie),
-      )),
-      child: Column(
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeOutCubic,
+      tween: Tween(begin: 0, end: 1),
+      builder: (context, value, child) => Transform.translate(
+        offset: Offset(0, 16 * (1 - value)),
+        child: Opacity(opacity: value, child: child),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+          builder: (_) => DetailsScreen(movie: movie),
+        )),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
@@ -370,6 +565,127 @@ class MovieCard extends StatelessWidget {
           ),
           Text('${movie.year}  •  ★ ${movie.rating.toStringAsFixed(1)}'),
         ],
+        ),
+      ),
+    );
+  }
+}
+
+class HeroBanner extends StatelessWidget {
+  const HeroBanner({required this.movie, required this.loading, super.key});
+
+  final Movie? movie;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 650),
+      curve: Curves.easeOutCubic,
+      height: 210,
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 18),
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colors.primary.withValues(alpha: .32),
+            colors.secondary.withValues(alpha: .14),
+            const Color(0xFF11151B),
+          ],
+        ),
+        border: Border.all(color: colors.primary.withValues(alpha: .28)),
+        boxShadow: [
+          BoxShadow(
+            color: colors.primary.withValues(alpha: .12),
+            blurRadius: 32,
+            spreadRadius: -8,
+          ),
+        ],
+      ),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 450),
+        child: loading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                key: ValueKey(movie?.id),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    movie == null ? 'Il cinema, a modo tuo.' : 'IN EVIDENZA',
+                    style: TextStyle(
+                      color: colors.primary,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    movie?.title ?? 'CloditTV',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 31,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -1.3,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    movie?.overview ??
+                        'Scopri, salva e organizza i film che ami.',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+class ThemePicker extends StatelessWidget {
+  const ThemePicker({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Atmosfera',
+              style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 4),
+            const Text('Cambia palette. La scelta resta salvata.'),
+            const SizedBox(height: 18),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: CloditTheme.values.map((theme) {
+                final profile = themeProfiles[theme]!;
+                final active = themeController.selected == theme;
+                return ChoiceChip(
+                  selected: active,
+                  onSelected: (_) => themeController.select(theme),
+                  avatar: CircleAvatar(
+                    backgroundColor: profile.accent,
+                    radius: 8,
+                  ),
+                  label: Text(profile.name),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
       ),
     );
   }
