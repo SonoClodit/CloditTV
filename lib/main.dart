@@ -1178,8 +1178,8 @@ class ExtensionsScreen extends StatelessWidget {
                               child: extension.system
                                   ? FilledButton.tonalIcon(
                                       onPressed: null,
-                                      icon: Icon(Icons.verified_rounded),
-                                      label: Text('Sistema'),
+                                      icon: const Icon(Icons.verified_rounded),
+                                      label: const Text('Sistema'),
                                     )
                                   : FilledButton.tonal(
                                       onPressed: () =>
