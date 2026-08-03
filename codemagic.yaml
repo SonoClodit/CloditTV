@@ -1,0 +1,36 @@
+workflows:
+  clodittv-unsigned-ios:
+    name: CloditTV unsigned IPA
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      xcode: latest
+      vars:
+        BUNDLE_ID: com.clodit.tv
+    scripts:
+      - name: Generate iOS project
+        script: |
+          flutter create --platforms=ios --org com.clodit --project-name clodit_tv .
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName CloditTV" ios/Runner/Info.plist
+          sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = [^;]*/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID/g" ios/Runner.xcodeproj/project.pbxproj
+      - name: Install dependencies
+        script: flutter pub get
+      - name: Generate CloditTV app icon
+        script: dart run flutter_launcher_icons
+      - name: Analyze
+        script: |
+          sed -i '' 's/CupertinoPageTransitionsBuilder()/ZoomPageTransitionsBuilder()/g' lib/main.dart
+          flutter analyze lib
+      - name: Build unsigned device app
+        script: |
+          flutter build ios --release --no-codesign \
+            --dart-define=TMDB_API_KEY="${TMDB_API_KEY:-}"
+      - name: Package IPA
+        script: |
+          mkdir -p build/ipa/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ipa/Payload/CloditTV.app
+          cd build/ipa
+          zip -r ../CloditTV-unsigned.ipa Payload
+    artifacts:
+      - build/CloditTV-unsigned.ipa
+      - build/ios/iphoneos/Runner.app
