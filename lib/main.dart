@@ -106,7 +106,7 @@ class CloditTvApp extends StatelessWidget {
             ),
             pageTransitionsTheme: const PageTransitionsTheme(
               builders: {
-                TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+                TargetPlatform.iOS: ZoomPageTransitionsBuilder(),
                 TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
               },
             ),
