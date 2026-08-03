@@ -3,6 +3,8 @@ workflows:
     name: CloditTV unsigned IPA
     max_build_duration: 60
     environment:
+      groups:
+        - clodittv_secrets
       flutter: stable
       xcode: latest
       vars:
